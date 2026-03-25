@@ -25,6 +25,8 @@ export default function App() {
 
   // updating  quota & fetch history when user logs in
   useEffect(() => {
+      console.log("User:", user);
+  console.log("Role:", user?.role);
     if (user) {
       setRemaining((user.usageLimit || 5) - (user.usageCount || 0));
       fetchHistory();
