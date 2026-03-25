@@ -7,7 +7,6 @@ export default function GeneratorForm({ onResult, onInfo, onError, onRemaining }
   const [moduleType, setModuleType] = useState("seo");
   const [inputs, setInputs] = useState({ keyword: "", url: "", product: "", audience: "" });
   const [busy, setBusy] = useState(false);
-  const [streaming, setStreaming] = useState(false);
 
   const updateInput = (field, value) => setInputs((prev) => ({ ...prev, [field]: value }));
 
@@ -32,52 +31,6 @@ export default function GeneratorForm({ onResult, onInfo, onError, onRemaining }
     } finally {
       setBusy(false);
     }
-  };
-
-  const stream = async () => {
-    if (!token) return;
-    onResult(null);
-    onError(null);
-    onInfo("Streaming...");
-    setStreaming(true);
-
-    const params = new URLSearchParams(
-      moduleType === "seo"
-        ? { moduleType, keyword: inputs.keyword, url: inputs.url || "" }
-        : {
-            moduleType,
-            keyword: inputs.keyword || "",
-            product: inputs.product,
-            audience: inputs.audience || "",
-          }
-    ).toString();
-
-    // Append token as query param for EventSource (cannot set headers)
-    const url = api.streamUrl(params) + `&token=${encodeURIComponent(token)}`;
-    const ev = new EventSource(url);
-    let buffer = "";
-
-    ev.onmessage = (evt) => {
-      buffer += evt.data;
-      onResult({ raw: buffer });
-    };
-
-    ev.addEventListener("provider", (e) => onInfo(`Provider: ${e.data}`));
-
-    ev.addEventListener("done", (e) => {
-      try {
-        const parsed = JSON.parse(e.data);
-        onRemaining(parsed.remaining);
-      } catch {}
-      ev.close();
-      setStreaming(false);
-    });
-
-    ev.addEventListener("error", () => {
-      onError("Stream error or connection closed");
-      ev.close();
-      setStreaming(false);
-    });
   };
 
   const inputClass =
@@ -148,7 +101,7 @@ export default function GeneratorForm({ onResult, onInfo, onError, onRemaining }
       <div className="flex gap-2">
         <button
           onClick={run}
-          disabled={busy || streaming}
+          disabled={busy}
           className="w-full rounded-lg bg-emerald-400 px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-emerald-300 disabled:opacity-50"
         >
           {busy ? (
@@ -161,23 +114,6 @@ export default function GeneratorForm({ onResult, onInfo, onError, onRemaining }
             </span>
           ) : (
             "Generate"
-          )}
-        </button>
-        <button
-          onClick={stream}
-          disabled={busy || streaming}
-          className="w-full rounded-lg border border-emerald-300 px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:bg-white/10 disabled:opacity-50"
-        >
-          {streaming ? (
-            <span className="flex items-center justify-center gap-2">
-              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-              </svg>
-              Streaming...
-            </span>
-          ) : (
-            "Stream"
           )}
         </button>
       </div>

@@ -37,8 +37,4 @@ export const api = {
   exportUrl(id, type) {
     return `${API_BASE}/api/ai/export/${id}/${type}`;
   },
-
-  streamUrl(query) {
-    return `${API_BASE}/api/ai/stream?${query}`;
-  },
 };
